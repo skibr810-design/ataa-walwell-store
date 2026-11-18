@@ -1,465 +1,55 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>لوحة تحكم عطاء ولويل</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إدارة عطاء ولويل</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#101114;color:#fff;font-family:Tahoma,Arial}
-button,input,textarea,select{font:inherit}
-button{cursor:pointer;border:0;border-radius:8px;padding:12px;background:#ff633d;color:white}
-button:disabled{opacity:.5;cursor:not-allowed}
-input,textarea,select{width:100%;padding:12px;background:#24252a;color:white;border:1px solid #444;border-radius:8px;margin:7px 0 14px}
-.wrap{max-width:1100px;margin:auto;padding:22px}
-.panel{background:#1b1c20;border:1px solid #333;border-radius:12px;padding:20px;margin:16px 0}
-h1,h2{color:#ff633d}
-.hidden{display:none!important}
-.product{padding:15px;background:#25262b;border-radius:10px;margin:12px 0}
-.product img{width:100%;max-height:200px;object-fit:contain}
-.product video{width:100%;max-height:250px}
-.danger{background:#b83232}
-.secondary{background:#555}
-#status{color:#ffc09e;white-space:pre-wrap}
-label{display:block}
-.check{display:flex;align-items:center;gap:8px}
-.check input{width:auto;margin:8px}
-</style>
-</head>
-<body>
-<div class="wrap">
-
-<div id="login" class="panel">
-<h1>عطاء ولويل</h1>
-<h2>دخول المدير</h2>
-<label>البريد الإلكتروني</label>
-<input id="email" type="email" placeholder="بريد المدير">
-<label>كلمة المرور</label>
-<input id="password" type="password" placeholder="كلمة المرور">
-<button id="loginBtn">تسجيل الدخول</button>
-<p id="loginMsg"></p>
-</div>
-
-<div id="dashboard" class="hidden">
-<h1>لوحة تحكم عطاء ولويل</h1>
-<p>إدارة المتجر والمنتجات والأقسام</p>
-<button id="logoutBtn" class="secondary">تسجيل الخروج</button>
-<p id="status"></p>
-
-<div class="panel">
-<h2 id="formTitle">إضافة منتج جديد</h2>
-<input type="hidden" id="editId">
-
-<label>اسم المنتج</label>
-<input id="name" placeholder="اسم المنتج">
-
-<label>وصف المنتج</label>
-<textarea id="description" placeholder="وصف المنتج"></textarea>
-
-<label>السعر بالشيكل</label>
-<input id="price" type="number" min="0" step="0.01">
-
-<label>القسم</label>
-<select id="category">
-<option value="">بدون قسم</option>
-</select>
-
-<label>صورة المنتج</label>
-<input id="photo" type="file" accept="image/*">
-
-<label>فيديو المنتج (اختياري)</label>
-<input id="video" type="file" accept="video/*">
-
-<label class="check">
-<input id="isNew" type="checkbox"> وصل حديثاً
-</label>
-
-<label class="check">
-<input id="isOffer" type="checkbox"> عرض خاص
-</label>
-
-<button id="saveProductBtn">حفظ المنتج</button>
-<button id="cancelEditBtn" class="secondary hidden">إلغاء التعديل</button>
-</div>
-
-<div class="panel">
-<h2>إضافة قسم جديد</h2>
-<input id="categoryName" placeholder="اسم القسم">
-<button id="addCategoryBtn">إضافة القسم</button>
-<div id="categoriesList"></div>
-</div>
-
-<div class="panel">
-<h2>المنتجات الموجودة</h2>
-<div id="productsList"></div>
-</div>
-</div>
-</div>
-
+:root{--accent:#ff633d;--bg:#101114;--panel:#1b1c20;--muted:#a9abb3}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font-family:Tahoma,Arial}button,input,textarea,select{font:inherit}button{border:0;border-radius:9px;padding:11px 15px;background:var(--accent);color:white;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}input,textarea,select{width:100%;padding:12px;background:#25262b;color:white;border:1px solid #41434b;border-radius:9px;margin:7px 0 14px}textarea{min-height:90px;resize:vertical}.wrap{max-width:1200px;margin:auto;padding:20px}.panel{background:var(--panel);border:1px solid #33353c;border-radius:14px;padding:20px;margin:16px 0}.hidden{display:none!important}h1,h2{color:var(--accent)}label{display:block;color:#ddd}.muted{color:var(--muted)}.toolbar,.actions,.tabs{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.tabs{margin:18px 0}.tabs button{background:#303137}.tabs button.active{background:var(--accent)}.secondary{background:#555}.danger{background:#a92f35}.success{color:#8ee0a9}.item{background:#25262b;border:1px solid #3a3b42;border-radius:11px;padding:15px;margin:12px 0;display:grid;gap:10px}.item img{max-width:220px;max-height:150px;object-fit:contain;border-radius:8px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.check{display:flex;align-items:center;gap:9px;margin:8px 0}.check input{width:auto;margin:0}.status{white-space:pre-wrap;color:#ffc09e;min-height:24px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:650px){.row{grid-template-columns:1fr}.wrap{padding:12px}.panel{padding:15px}.toolbar button,.actions button{flex:1}}
+</style></head><body><main class="wrap">
+<section id="login" class="panel"><h1>عطاء ولويل</h1><h2>دخول المدير</h2><label>البريد الإلكتروني</label><input id="email" type="email"><label>كلمة المرور</label><input id="password" type="password"><button id="loginBtn">تسجيل الدخول</button><p id="loginMsg" class="status"></p></section>
+<section id="dashboard" class="hidden">
+<div class="toolbar"><div><h1>لوحة تحكم عطاء ولويل</h1><p class="muted">إدارة المتجر والمحتوى والإعدادات</p></div><button id="logoutBtn" class="secondary">تسجيل الخروج</button></div><p id="status" class="status"></p>
+<nav class="tabs"><button data-tab="products" class="active">المنتجات</button><button data-tab="categories">الأقسام</button><button data-tab="posts">المنشورات والإعلانات</button><button data-tab="settings">واجهة المتجر</button></nav>
+<section id="tab-products" class="panel">
+<h2 id="productTitle">إضافة منتج</h2><input type="hidden" id="productId">
+<div class="row"><div><label>اسم المنتج</label><input id="pName"><label>السعر بالشيكل</label><input id="pPrice" type="number" min="0" step=".01"><label>القسم</label><select id="pCategory"><option value="">بدون قسم</option></select></div><div><label>الوصف</label><textarea id="pDescription"></textarea><label>صورة المنتج</label><input id="pImage" type="file" accept="image/*"><label>فيديو المنتج</label><input id="pVideo" type="file" accept="video/*"></div></div>
+<label class="check"><input id="pNew" type="checkbox"> وصل حديثاً</label><label class="check"><input id="pOffer" type="checkbox"> عرض خاص</label><label class="check"><input id="pActive" type="checkbox" checked> ظاهر في المتجر</label>
+<div class="actions"><button id="saveProduct">حفظ المنتج</button><button id="cancelProduct" class="secondary">تفريغ النموذج</button></div><hr><h2>المنتجات الحالية</h2><div id="productsList"></div>
+</section>
+<section id="tab-categories" class="panel hidden"><h2>إدارة الأقسام</h2><input id="cName" placeholder="اسم القسم"><label>صورة القسم (اختيارية)</label><input id="cImage" type="file" accept="image/*"><button id="addCategory">إضافة قسم</button><div id="categoriesList"></div></section>
+<section id="tab-posts" class="panel hidden"><h2>المنشورات والإعلانات</h2><p class="muted">يتطلب إنشاء جدول store_posts من ملف SQL المرفق قبل استخدام هذا القسم.</p><input type="hidden" id="postId"><label>عنوان المنشور</label><input id="postTitle"><label>النص</label><textarea id="postBody"></textarea><label>صورة الإعلان</label><input id="postImage" type="file" accept="image/*"><label class="check"><input id="postActive" type="checkbox" checked> منشور ظاهر</label><button id="savePost">حفظ المنشور</button><div id="postsList"></div></section>
+<section id="tab-settings" class="panel hidden"><h2>تخصيص واجهة المتجر</h2><p class="muted">يتطلب إنشاء جدول store_settings من ملف SQL المرفق قبل حفظ الإعدادات.</p><div class="row"><div><label>اسم المتجر</label><input id="sName"><label>عنوان الواجهة</label><input id="sHeadline"><label>النص التعريفي</label><textarea id="sSubtitle"></textarea><label>رقم واتساب (بالصيغة الدولية)</label><input id="sPhone" value="970568077000"></div><div><label>اللون الرئيسي</label><input id="sColor" type="color" value="#ff633d"><label>رابط الشعار أو صورة الغلاف</label><input id="sLogoUrl"><label>صورة الغلاف</label><input id="sCover" type="file" accept="image/*"></div></div><button id="saveSettings">حفظ إعدادات الواجهة</button></section>
+</section></main>
 <script>
 const SUPABASE_URL="https://bjjlmeceuyehtdsvmjvt.supabase.co";
-
-// ضع مفتاح Publishable الذي نسخته من Supabase هنا
 const SUPABASE_ANON_KEY="sb_publishable_yY3tCS7726754hkP8sCdaw_ySbXgKyh";
-
-const db=window.supabase.createClient(
- SUPABASE_URL,
- SUPABASE_ANON_KEY
-);
-
-const $=id=>document.getElementById(id);
-
-const statusBox=$("status");
-
-function message(text){
- statusBox.textContent=text;
-}
-
-function loginMessage(text){
- $("loginMsg").textContent=text;
-}
-
-async function checkAdmin(){
- const {data:{session},error}=await db.auth.getSession();
-
- if(error){
-  loginMessage(error.message);
-  return;
- }
-
- if(!session)return;
-
- const user=session.user;
-
- if(user.app_metadata?.role!=="admin"){
-  await db.auth.signOut();
-  loginMessage("الحساب لا يملك صلاحيات المدير. يجب تفعيل صلاحية admin.");
-  return;
- }
-
- $("login").classList.add("hidden");
- $("dashboard").classList.remove("hidden");
-
- await loadCategories();
- await loadProducts();
-}
-
-async function login(){
- const email=$("email").value.trim();
- const password=$("password").value;
-
- if(!email||!password){
-  loginMessage("أدخل البريد الإلكتروني وكلمة المرور");
-  return;
- }
-
- $("loginBtn").disabled=true;
- loginMessage("جاري تسجيل الدخول...");
-
- const {error}=await db.auth.signInWithPassword({
-  email,
-  password
- });
-
- $("loginBtn").disabled=false;
-
- if(error){
-  loginMessage("تعذر تسجيل الدخول: "+error.message);
-  return;
- }
-
- await checkAdmin();
-}
-
-async function logout(){
- await db.auth.signOut();
- location.reload();
-}
-
-async function uploadFile(file,folder){
- if(!file)return null;
-
- const safeExtension=(file.name.split(".").pop()||"bin")
-  .toLowerCase()
-  .replace(/[^a-z0-9]/g,"");
-
- const path=folder+"/"+crypto.randomUUID()+"."+
-  (safeExtension||"bin");
-
- const {error}=await db.storage
-  .from("products-media")
-  .upload(path,file,{upsert:false});
-
- if(error)throw error;
-
- const {data}=db.storage
-  .from("products-media")
-  .getPublicUrl(path);
-
- return data.publicUrl;
-}
-
-async function loadCategories(){
- const {data,error}=await db
-  .from("categories")
-  .select("*")
-  .order("sort_order");
-
- if(error){
-  message("خطأ في الأقسام: "+error.message);
-  return;
- }
-
- $("category").innerHTML=
-  '<option value="">بدون قسم</option>';
-
- $("categoriesList").innerHTML="";
-
- data.forEach(c=>{
-  $("category").add(new Option(c.name,c.id));
-
-  const item=document.createElement("div");
-  item.className="product";
-
-  const title=document.createElement("span");
-  title.textContent=c.name;
-
-  const edit=document.createElement("button");
-  edit.className="secondary";
-  edit.textContent="تعديل الاسم";
-  edit.onclick=()=>editCategory(c.id,c.name);
-
-  const del=document.createElement("button");
-  del.className="danger";
-  del.textContent="حذف القسم";
-  del.onclick=()=>deleteCategory(c.id);
-
-  item.append(title,edit,del);
-  $("categoriesList").append(item);
- });
-}
-
-async function addCategory(){
- const value=$("categoryName").value.trim();
-
- if(!value)return alert("اكتب اسم القسم");
-
- const {error}=await db
-  .from("categories")
-  .insert({name:value});
-
- if(error)return alert(error.message);
-
- $("categoryName").value="";
- await loadCategories();
- message("تم إضافة القسم بنجاح");
-}
-
-async function editCategory(id,currentName){
- const value=prompt("اكتب الاسم الجديد للقسم:",currentName);
- if(value===null)return;
- const name=value.trim();
- if(!name)return alert("اسم القسم لا يمكن أن يكون فارغاً");
- const {error}=await db.from("categories").update({name}).eq("id",id);
- if(error)return alert("تعذر تعديل القسم: "+error.message);
- await loadCategories();
- message("تم تعديل اسم القسم بنجاح");
-}
-
-async function deleteCategory(id){
- if(!confirm("هل تريد حذف هذا القسم؟"))return;
-
- const {error}=await db
-  .from("categories")
-  .delete()
-  .eq("id",id);
-
- if(error)return alert(error.message);
-
- await loadCategories();
- await loadProducts();
-}
-
-function resetForm(){
- $("editId").value="";
- $("name").value="";
- $("description").value="";
- $("price").value="";
- $("category").value="";
- $("photo").value="";
- $("video").value="";
- $("isNew").checked=false;
- $("isOffer").checked=false;
- $("formTitle").textContent="إضافة منتج جديد";
- $("saveProductBtn").textContent="حفظ المنتج";
- $("cancelEditBtn").classList.add("hidden");
-}
-
-async function saveProduct(){
- try{
-  const id=$("editId").value;
-  const name=$("name").value.trim();
-  const priceValue=$("price").value;
-
-  if(!name||priceValue===""){
-   return alert("أدخل اسم المنتج والسعر");
-  }
-
-  const price=Number(priceValue);
-
-  if(!Number.isFinite(price)||price<0){
-   return alert("السعر غير صحيح");
-  }
-
-  $("saveProductBtn").disabled=true;
-  message("جاري حفظ المنتج...");
-
-  const record={
-   name,
-   description:$("description").value,
-   price,
-   category_id:$("category").value||null,
-   is_new:$("isNew").checked,
-   is_offer:$("isOffer").checked,
-   active:true
-  };
-
-  const imageFile=$("photo").files[0];
-  const videoFile=$("video").files[0];
-
-  if(imageFile){
-   if(imageFile.size>10*1024*1024)
-    throw new Error("حجم الصورة يجب ألا يتجاوز 10 ميغابايت");
-
-   record.image_url=await uploadFile(imageFile,"images");
-  }
-
-  if(videoFile){
-   if(videoFile.size>50*1024*1024)
-    throw new Error("حجم الفيديو يجب ألا يتجاوز 50 ميغابايت");
-
-   record.video_url=await uploadFile(videoFile,"videos");
-  }
-
-  let result;
-
-  if(id){
-   result=await db.from("products")
-    .update(record).eq("id",id);
-  }else{
-   result=await db.from("products")
-    .insert(record);
-  }
-
-  if(result.error)throw result.error;
-
-  resetForm();
-  message(id?"تم تعديل المنتج بنجاح":"تم إضافة المنتج بنجاح");
-  await loadProducts();
-
- }catch(e){
-  message("حدث خطأ: "+e.message);
- }finally{
-  $("saveProductBtn").disabled=false;
- }
-}
-
-async function loadProducts(){
- const {data,error}=await db
-  .from("products")
-  .select("*")
-  .order("created_at",{ascending:false});
-
- if(error){
-  message("خطأ في تحميل المنتجات: "+error.message);
-  return;
- }
-
- $("productsList").innerHTML="";
-
- data.forEach(p=>{
-  const item=document.createElement("div");
-  item.className="product";
-
-  const title=document.createElement("h3");
-  title.textContent=p.name;
-
-  const desc=document.createElement("p");
-  desc.textContent=p.description||"";
-
-  const price=document.createElement("strong");
-  price.textContent=p.price+" شيكل";
-
-  item.append(title,desc,price);
-
-  if(p.image_url){
-   const img=document.createElement("img");
-   img.src=p.image_url;
-   img.alt=p.name;
-   item.append(img);
-  }
-
-  if(p.video_url){
-   const video=document.createElement("video");
-   video.src=p.video_url;
-   video.controls=true;
-   item.append(video);
-  }
-
-  const edit=document.createElement("button");
-  edit.textContent="تعديل المنتج";
-  edit.className="secondary";
-  edit.onclick=()=>editProduct(p);
-
-  const del=document.createElement("button");
-  del.textContent="حذف المنتج";
-  del.className="danger";
-  del.onclick=()=>deleteProduct(p.id);
-
-  item.append(edit,del);
-  $("productsList").append(item);
- });
-}
-
-function editProduct(p){
- $("editId").value=p.id;
- $("name").value=p.name;
- $("description").value=p.description||"";
- $("price").value=p.price;
- $("category").value=p.category_id||"";
- $("isNew").checked=p.is_new;
- $("isOffer").checked=p.is_offer;
-
- $("formTitle").textContent="تعديل المنتج";
- $("saveProductBtn").textContent="حفظ التعديلات";
- $("cancelEditBtn").classList.remove("hidden");
-
- window.scrollTo({top:0,behavior:"smooth"});
-}
-
-async function deleteProduct(id){
- if(!confirm("هل تريد حذف المنتج؟"))return;
-
- const {error}=await db
-  .from("products")
-  .delete()
-  .eq("id",id);
-
- if(error)return alert(error.message);
-
- await loadProducts();
- message("تم حذف المنتج");
-}
-
-$("loginBtn").addEventListener("click",login);
-$("logoutBtn").addEventListener("click",logout);
-$("saveProductBtn").addEventListener("click",saveProduct);
-$("addCategoryBtn").addEventListener("click",addCategory);
-$("cancelEditBtn").addEventListener("click",resetForm);
-
-checkAdmin();
-</script>
-</body>
-</html>
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY),$=id=>document.getElementById(id);
+const say=t=>$("status").textContent=t;
+function loginSay(t){$("loginMsg").textContent=t}
+function adminUser(u){return u&&u.app_metadata&&u.app_metadata.role==="admin"}
+async function boot(){const {data,error}=await db.auth.getSession();if(error)return loginSay(error.message);if(data.session)await showDashboard(data.session.user)}
+async function showDashboard(user){if(!adminUser(user)){await db.auth.signOut();return loginSay("هذا الحساب لا يملك صلاحية المدير.");}$("login").classList.add("hidden");$("dashboard").classList.remove("hidden");await Promise.all([loadCategories(),loadProducts(),loadPosts(),loadSettings()])}
+async function login(){ $("loginBtn").disabled=true;loginSay("جاري تسجيل الدخول...");const {data,error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});$("loginBtn").disabled=false;if(error)return loginSay("تعذر تسجيل الدخول: "+error.message);await showDashboard(data.user)}
+async function logout(){await db.auth.signOut();location.reload()}
+function tab(name){document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));["products","categories","posts","settings"].forEach(n=>$("tab-"+n).classList.toggle("hidden",n!==name))}
+async function upload(file,folder){if(!file)return null;const limit=file.type.startsWith("video/")?50:10;if(file.size>limit*1024*1024)throw Error("حجم الملف يتجاوز "+limit+" ميغابايت");const ext=(file.name.split(".").pop()||"bin").replace(/[^a-z0-9]/gi,"");const path=folder+"/"+crypto.randomUUID()+"."+ext;const {error}=await db.storage.from("products-media").upload(path,file,{upsert:false});if(error)throw error;return db.storage.from("products-media").getPublicUrl(path).data.publicUrl}
+function mediaPath(url){const marker="/storage/v1/object/public/products-media/";return url&&url.includes(marker)?url.split(marker)[1]:null}
+async function removeMedia(url){const path=mediaPath(url);if(!path)return;const {error}=await db.storage.from("products-media").remove([path]);if(error)console.warn("Storage cleanup:",error.message)}
+async function loadCategories(){const {data,error}=await db.from("categories").select("*").order("sort_order");if(error){say("تعذر تحميل الأقسام: "+error.message);return}const select=$("pCategory"),keep=select.value;select.replaceChildren(new Option("بدون قسم",""));$("categoriesList").replaceChildren();(data||[]).forEach(c=>{select.add(new Option(c.name,c.id));const el=document.createElement("div");el.className="item";const title=document.createElement("strong");title.textContent=c.name;const img=c.image_url?document.createElement("img"):null;if(img)img.src=c.image_url;const edit=document.createElement("button");edit.textContent="تعديل الاسم";edit.className="secondary";edit.onclick=()=>editCategory(c);const up=document.createElement("button");up.textContent="رفع/تغيير الصورة";up.className="secondary";up.onclick=()=>changeCategoryImage(c);const del=document.createElement("button");del.textContent="حذف";del.className="danger";del.onclick=()=>deleteCategory(c);const actions=document.createElement("div");actions.className="actions";actions.append(edit,up,del);el.append(title);if(img)el.append(img);el.append(actions);$("categoriesList").append(el)});select.value=keep}
+async function addCategory(){const name=$("cName").value.trim();if(!name)return alert("اكتب اسم القسم");try{const image_url=await upload($("cImage").files[0],"images");const max=(await db.from("categories").select("sort_order").order("sort_order",{ascending:false}).limit(1)).data?.[0]?.sort_order??0;const {error}=await db.from("categories").insert({name,image_url,sort_order:max+1,active:true});if(error)throw error;$("cName").value="";$("cImage").value="";await loadCategories();say("تمت إضافة القسم")}catch(e){say("تعذر إضافة القسم: "+e.message)}}
+async function editCategory(c){const name=prompt("الاسم الجديد للقسم:",c.name);if(name===null)return;if(!name.trim())return alert("الاسم مطلوب");const {error}=await db.from("categories").update({name:name.trim()}).eq("id",c.id);if(error)return say("تعذر التعديل: "+error.message);await loadCategories();say("تم تعديل القسم")}
+async function changeCategoryImage(c){const input=document.createElement("input");input.type="file";input.accept="image/*";input.onchange=async()=>{try{if(!input.files[0])return;const url=await upload(input.files[0],"images");const {error}=await db.from("categories").update({image_url:url}).eq("id",c.id);if(error)throw error;if(c.image_url)await removeMedia(c.image_url);await loadCategories();say("تم تحديث صورة القسم")}catch(e){say("تعذر تغيير الصورة: "+e.message)}};input.click()}
+async function deleteCategory(c){if(!confirm("حذف القسم؟ لن نحذف المنتجات المرتبطة به."))return;const {error}=await db.from("categories").delete().eq("id",c.id);if(error)return say("تعذر الحذف: "+error.message);await loadCategories();say("تم حذف القسم")}
+function clearProduct(){$("productId").value="";["pName","pPrice","pDescription"].forEach(id=>$(id).value="");$("pCategory").value="";$("pImage").value="";$("pVideo").value="";$("pNew").checked=false;$("pOffer").checked=false;$("pActive").checked=true;$("productTitle").textContent="إضافة منتج"}
+async function saveProduct(){const id=$("productId").value,name=$("pName").value.trim(),price=Number($("pPrice").value);if(!name||$("pPrice").value==="")return alert("أدخل الاسم والسعر");if(!Number.isFinite(price)||price<0)return alert("السعر غير صحيح");$("saveProduct").disabled=true;try{const record={name,price,description:$("pDescription").value,category_id:$("pCategory").value||null,is_new:$("pNew").checked,is_offer:$("pOffer").checked,active:$("pActive").checked};const old=id?(await db.from("products").select("image_url,video_url").eq("id",id).single()).data:null;const imageFile=$("pImage").files[0],videoFile=$("pVideo").files[0];if(imageFile)record.image_url=await upload(imageFile,"images");if(videoFile)record.video_url=await upload(videoFile,"videos");let result=id?await db.from("products").update(record).eq("id",id):await db.from("products").insert(record);if(result.error)throw result.error;if(old&&imageFile&&old.image_url)await removeMedia(old.image_url);if(old&&videoFile&&old.video_url)await removeMedia(old.video_url);clearProduct();await loadProducts();say(id?"تم تحديث المنتج":"تمت إضافة المنتج")}catch(e){say("تعذر حفظ المنتج: "+e.message)}finally{$("saveProduct").disabled=false}}
+async function loadProducts(){const {data,error}=await db.from("products").select("*").order("created_at",{ascending:false});if(error){say("تعذر تحميل المنتجات: "+error.message);return}$("productsList").replaceChildren();(data||[]).forEach(p=>{const el=document.createElement("div");el.className="item";const h=document.createElement("strong");h.textContent=p.name+" — "+p.price+" شيكل";const state=document.createElement("span");state.textContent=p.active?"ظاهر في المتجر":"مخفي";state.className=p.active?"success":"muted";el.append(h,state);if(p.image_url){const im=document.createElement("img");im.src=p.image_url;el.append(im)}const actions=document.createElement("div");actions.className="actions";const edit=document.createElement("button");edit.textContent="تعديل";edit.className="secondary";edit.onclick=()=>editProduct(p);const toggle=document.createElement("button");toggle.textContent=p.active?"إخفاء":"إظهار";toggle.className="secondary";toggle.onclick=()=>toggleProduct(p);const del=document.createElement("button");del.textContent="حذف المنتج";del.className="danger";del.onclick=()=>deleteProduct(p);actions.append(edit,toggle,del);el.append(actions);$("productsList").append(el)})}
+function editProduct(p){$("productId").value=p.id;$("pName").value=p.name||"";$("pPrice").value=p.price??"";$("pDescription").value=p.description||"";$("pCategory").value=p.category_id||"";$("pNew").checked=!!p.is_new;$("pOffer").checked=!!p.is_offer;$("pActive").checked=!!p.active;$("productTitle").textContent="تعديل المنتج — "+p.name;tab("products");scrollTo({top:0,behavior:"smooth"})}
+async function toggleProduct(p){const {error}=await db.from("products").update({active:!p.active}).eq("id",p.id);if(error)return say("تعذر تغيير حالة المنتج: "+error.message);await loadProducts();say("تم تحديث ظهور المنتج")}
+async function deleteProduct(p){if(!confirm("حذف المنتج نهائياً؟"))return;const {error}=await db.from("products").delete().eq("id",p.id);if(error)return say("تعذر حذف المنتج: "+error.message);await removeMedia(p.image_url);await removeMedia(p.video_url);await loadProducts();say("تم حذف المنتج")}
+async function loadPosts(){const {data,error}=await db.from("store_posts").select("*").order("created_at",{ascending:false});if(error){$("postsList").textContent="جدول المنشورات غير جاهز بعد. نفّذ ملف supabase-setup.sql أولاً.";return}$("postsList").replaceChildren();(data||[]).forEach(p=>{const el=document.createElement("div");el.className="item";const h=document.createElement("strong");h.textContent=p.title;const body=document.createElement("p");body.textContent=p.body||"";const state=document.createElement("span");state.textContent=p.active?"منشور":"مخفي";el.append(h,body,state);if(p.image_url){const im=document.createElement("img");im.src=p.image_url;el.append(im)}const b=document.createElement("button");b.className="danger";b.textContent="حذف المنشور";b.onclick=()=>deletePost(p);el.append(b);$("postsList").append(el)})}
+async function savePost(){try{const title=$("postTitle").value.trim();if(!title)return alert("العنوان مطلوب");const record={title,body:$("postBody").value,active:$("postActive").checked};const image=await upload($("postImage").files[0],"images");if(image)record.image_url=image;const id=$("postId").value;const {error}=id?await db.from("store_posts").update(record).eq("id",id):await db.from("store_posts").insert(record);if(error)throw error;$("postId").value="";$("postTitle").value="";$("postBody").value="";$("postImage").value="";await loadPosts();say("تم حفظ المنشور")}catch(e){say("تعذر حفظ المنشور: "+e.message)}}
+async function deletePost(p){if(!confirm("حذف المنشور؟"))return;const {error}=await db.from("store_posts").delete().eq("id",p.id);if(error)return say(error.message);await removeMedia(p.image_url);await loadPosts()}
+async function loadSettings(){const {data,error}=await db.from("store_settings").select("*").eq("id",1).maybeSingle();if(error){say("جدول إعدادات الواجهة غير جاهز بعد. نفّذ ملف supabase-setup.sql.");return}const s=data?.settings||{};$("sName").value=s.store_name||"عطاء ولويل";$("sHeadline").value=s.headline||"عالمك في كماليات السيارات";$("sSubtitle").value=s.subtitle||"اكتشف أجمل الإكسسوارات والكماليات لسيارتك";$("sPhone").value=s.whatsapp||"970568077000";$("sColor").value=s.accent||"#ff633d";$("sLogoUrl").value=s.logo_url||""}
+async function saveSettings(){try{const old=(await db.from("store_settings").select("settings").eq("id",1).maybeSingle()).data?.settings||{};const cover=await upload($("sCover").files[0],"images");const settings={...old,store_name:$("sName").value,headline:$("sHeadline").value,subtitle:$("sSubtitle").value,whatsapp:$("sPhone").value,accent:$("sColor").value,logo_url:$("sLogoUrl").value,cover_url:cover||old.cover_url||""};const {error}=await db.from("store_settings").upsert({id:1,settings,updated_at:new Date().toISOString()});if(error)throw error;say("تم حفظ إعدادات الواجهة")}catch(e){say("تعذر حفظ الإعدادات: "+e.message)}}
+$("loginBtn").onclick=login;$("logoutBtn").onclick=logout;$("saveProduct").onclick=saveProduct;$("cancelProduct").onclick=clearProduct;$("addCategory").onclick=addCategory;$("savePost").onclick=savePost;$("saveSettings").onclick=saveSettings;document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>tab(b.dataset.tab));boot();
+</script></body></html>
