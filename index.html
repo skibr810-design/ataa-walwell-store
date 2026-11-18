@@ -250,9 +250,10 @@ function renderProducts() {
     });
     const download = createElement("a", "", "تحميل الصورة");
     download.href = image.src;
-    download.target = "_blank";
-    download.rel = "noopener noreferrer";
-    download.download = (product.name || "product") + ".jpg";
+    download.addEventListener("click", event => {
+      event.preventDefault();
+      downloadProductImage(image.src, (product.name || "product") + ".jpg");
+    });
     actions.append(share, download);
     info.append(actions);
     card.append(info);
@@ -282,11 +283,31 @@ const zoomButton = imageModal.querySelector(".zoom-toggle");
 const modalDownload = imageModal.querySelector(".image-download");
 let imageZoomed = false;
 
+async function downloadProductImage(src, filename) {
+  try {
+    const response = await fetch(src);
+    if (!response.ok) throw new Error("تعذر تنزيل الصورة");
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = filename || "product-image";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  } catch (error) {
+    window.open(src, "_blank", "noopener");
+  }
+}
 function openProductImage(src, alt) {
   modalImage.src = src;
   modalImage.alt = alt || "صورة المنتج";
   modalDownload.href = src;
-  modalDownload.download = (alt || "product") + ".jpg";
+  modalDownload.onclick = event => {
+    event.preventDefault();
+    downloadProductImage(src, (alt || "product") + ".jpg");
+  };
   imageZoomed = false;
   modalImage.style.transform = "scale(1)";
   zoomButton.textContent = "تكبير العدسة +";
