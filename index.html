@@ -14,7 +14,7 @@ body{margin:0;background:#101114;color:#fff;font-family:Tahoma,Arial,sans-serif}
 header{background:#191a1e;padding:22px 7%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333}
 .logo{font-size:27px;font-weight:bold;color:#ff633d}
 header a{color:white;text-decoration:none}
-.hero{padding:75px 8%;text-align:center;background:linear-gradient(120deg,#252629,#101114)}
+.hero{padding:75px 8%;text-align:center;background:linear-gradient(120deg,rgba(15,16,19,.76),rgba(15,16,19,.86)),url("https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=2000&q=85") center/cover no-repeat;min-height:260px}
 .hero h1{font-size:38px;margin:0 0 15px}
 .hero h1 span{color:#ff633d}
 .hero p{color:#bbb;line-height:2}
@@ -26,7 +26,20 @@ h2{border-right:4px solid #ff633d;padding-right:12px}
 .category.active{background:#ff633d;border-color:#ff633d}
 .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:20px}
 .product{background:#1c1d21;border:1px solid #333;border-radius:12px;overflow:hidden}
-.product img{width:100%;height:190px;object-fit:cover;background:#292929}
+.product .product-image{display:block;width:100%;height:230px;padding:0;border:0;background:#151619;cursor:zoom-in;overflow:hidden}
+.product .product-image img{display:block;width:100%;height:100%;object-fit:contain;background:#151619;transition:transform .2s}
+.product .product-image:hover img{transform:scale(1.035)}
+.product video{width:100%;max-height:220px;background:#000}
+.product-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.product-actions button,.product-actions a{flex:1;min-width:110px;border:1px solid #45464b;border-radius:7px;background:#292a30;color:#fff;text-align:center;text-decoration:none;padding:10px;font:inherit;font-size:13px;cursor:pointer}
+.product-actions button:hover,.product-actions a:hover{border-color:#ff633d}
+.image-modal{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.94);display:none;align-items:center;justify-content:center;padding:65px 18px 25px}
+.image-modal.open{display:flex}
+.image-modal img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .2s;transform-origin:center}
+.image-modal-tools{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;gap:8px}
+.image-modal-tools button,.image-modal-tools a{background:#25262b;color:#fff;border:1px solid #555;border-radius:8px;padding:10px 13px;text-decoration:none;font:inherit;cursor:pointer}
+.image-modal-tools .modal-close{margin-right:auto}
+.share-status{color:#9ee6b8;font-size:12px;margin-top:8px;min-height:16px}
 .product video{width:100%;max-height:220px;background:#000}
 .product-info{padding:16px}
 .product h3{margin:0 0 10px}
@@ -154,6 +167,10 @@ function renderProducts() {
 
   filtered.forEach(product => {
     const card = createElement("div", "product");
+    card.id = "product-" + product.id;
+    const imageButton = createElement("button", "product-image");
+    imageButton.type = "button";
+    imageButton.setAttribute("aria-label", "تكبير صورة " + (product.name || "المنتج"));
     const image = createElement("img");
 
     image.src = product.image_url ||
@@ -165,6 +182,8 @@ function renderProducts() {
     image.onerror = () => {
       image.src = "https://placehold.co/500x400/24252a/ffffff?text=Ataa+Walwell";
     };
+    imageButton.append(image);
+    imageButton.addEventListener("click", () => openProductImage(image.src, image.alt));
 
     const info = createElement("div", "product-info");
     const name = createElement("h3", "", product.name || "منتج");
@@ -197,9 +216,9 @@ function renderProducts() {
       video.src = product.video_url;
       video.controls = true;
       video.preload = "metadata";
-      card.append(image, video);
+      card.append(imageButton, video);
     } else {
-      card.append(image);
+      card.append(imageButton);
     }
 
     const orderPhone = window.storeWhatsapp || phone;
@@ -213,10 +232,82 @@ function renderProducts() {
     order.rel = "noopener noreferrer";
 
     info.append(order);
+
+    const actions = createElement("div", "product-actions");
+    const share = createElement("button", "", "نسخ رابط المنتج");
+    share.type = "button";
+    share.addEventListener("click", async () => {
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.searchParams.set("product", product.id);
+      url.hash = "products";
+      try {
+        await navigator.clipboard.writeText(url.toString());
+        share.textContent = "تم نسخ الرابط ✓";
+      } catch (error) {
+        window.prompt("انسخ رابط المنتج:", url.toString());
+      }
+    });
+    const download = createElement("a", "", "تحميل الصورة");
+    download.href = image.src;
+    download.target = "_blank";
+    download.rel = "noopener noreferrer";
+    download.download = (product.name || "product") + ".jpg";
+    actions.append(share, download);
+    info.append(actions);
     card.append(info);
     productsElement.append(card);
   });
+
+  const requestedProduct = new URLSearchParams(window.location.search).get("product");
+  if (requestedProduct) {
+    const target = document.getElementById("product-" + requestedProduct);
+    if (target) {
+      setTimeout(() => {
+        target.scrollIntoView({behavior:"smooth", block:"center"});
+        target.style.outline = "2px solid #ff633d";
+        target.style.outlineOffset = "5px";
+      }, 150);
+    }
+  }
 }
+
+
+const imageModal = document.createElement("div");
+imageModal.className = "image-modal";
+imageModal.innerHTML = '<div class="image-modal-tools"><button type="button" class="zoom-toggle">تكبير العدسة +</button><a class="image-download" href="#" target="_blank" rel="noopener">تحميل الصورة</a><button type="button" class="modal-close">إغلاق ✕</button></div><img alt="صورة المنتج مكبرة">';
+document.body.appendChild(imageModal);
+const modalImage = imageModal.querySelector("img");
+const zoomButton = imageModal.querySelector(".zoom-toggle");
+const modalDownload = imageModal.querySelector(".image-download");
+let imageZoomed = false;
+
+function openProductImage(src, alt) {
+  modalImage.src = src;
+  modalImage.alt = alt || "صورة المنتج";
+  modalDownload.href = src;
+  modalDownload.download = (alt || "product") + ".jpg";
+  imageZoomed = false;
+  modalImage.style.transform = "scale(1)";
+  zoomButton.textContent = "تكبير العدسة +";
+  imageModal.classList.add("open");
+}
+function closeProductImage() {
+  imageModal.classList.remove("open");
+  modalImage.src = "";
+}
+zoomButton.addEventListener("click", () => {
+  imageZoomed = !imageZoomed;
+  modalImage.style.transform = imageZoomed ? "scale(1.8)" : "scale(1)";
+  zoomButton.textContent = imageZoomed ? "تصغير العدسة −" : "تكبير العدسة +";
+});
+imageModal.querySelector(".modal-close").addEventListener("click", closeProductImage);
+imageModal.addEventListener("click", event => {
+  if (event.target === imageModal) closeProductImage();
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeProductImage();
+});
 
 async function loadPublicContent(){
   try{
