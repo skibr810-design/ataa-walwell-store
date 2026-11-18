@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة تحكم عطاء ولويل</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101114;color:#fff;font-family:Tahoma,Arial}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer;border:0;border-radius:8px;padding:12px;background:#ff633d;color:white}
+input,textarea,select{width:100%;padding:12px;background:#24252a;color:white;border:1px solid #444;border-radius:8px;margin:7px 0 14px}
+.wrap{max-width:1100px;margin:auto;padding:22px}
+.panel{background:#1b1c20;border:1px solid #333;border-radius:12px;padding:20px;margin:16px 0}
+h1,h2{color:#ff633d}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
+.hidden{display:none}
+.product{padding:12px;background:#25262b;border-radius:10px;margin:10px 0}
+.product img{width:100%;max-height:180px;object-fit:contain}
+.small{background:#555;margin:3px}
+.danger{background:#b83232}
+#status{color:#ffc09e}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div id="login" class="panel">
+<h1>عطاء ولويل</h1>
+<h2>دخول المدير</h2>
+<label>البريد الإلكتروني</label>
+<input id="email" type="email" placeholder="بريد المدير">
+<label>كلمة المرور</label>
+<input id="password" type="password" placeholder="كلمة المرور">
+<button onclick="login()">تسجيل الدخول</button>
+<p id="loginMsg"></p>
+</div>
+
+<div id="dashboard" class="hidden">
+<h1>لوحة تحكم عطاء ولويل</h1>
+<p>إدارة المنتجات والأقسام</p>
+<button onclick="logout()">تسجيل الخروج</button>
+<p id="status"></p>
+
+<div class="panel">
+<h2>إضافة منتج جديد</h2>
+<label>اسم المنتج</label>
+<input id="name" placeholder="اسم المنتج">
+<label>وصف المنتج</label>
+<textarea id="description" placeholder="وصف المنتج"></textarea>
+<label>السعر بالشيكل</label>
+<input id="price" type="number" min="0" step="0.01">
+<label>القسم</label>
+<select id="category"></select>
+<label>صورة المنتج</label>
+<input id="photo" type="file" accept="image/*">
+<label>فيديو المنتج (اختياري)</label>
+<input id="video" type="file" accept="video/*">
+<div><label><input id="isNew" type="checkbox" style="width:auto"> وصل حديثاً</label></div>
+<div><label><input id="isOffer" type="checkbox" style="width:auto"> عرض خاص</label></div>
+<button onclick="addProduct()">حفظ المنتج</button>
+</div>
+
+<div class="panel">
+<h2>إضافة قسم</h2>
+<input id="categoryName" placeholder="اسم القسم">
+<button onclick="addCategory()">إضافة القسم</button>
+</div>
+
+<div class="panel">
+<h2>المنتجات الموجودة</h2>
+<div id="products"></div>
+</div>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL="https://bjjlmeceuyehtdsvmjvt.supabase.co";
+const SUPABASE_ANON_KEY="ضع_مفتاح_anon_public_هنا";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+async function login(){
+ const {data,error}=await db.auth.signInWithPassword({
+  email:document.getElementById("email").value,
+  password:document.getElementById("password").value
+ });
+ if(error){document.getElementById("loginMsg").textContent=error.message;return}
+ await checkAdmin();
+}
+
+async function checkAdmin(){
+ const {data:{user}}=await db.auth.getUser();
+ if(!user)return;
+ if(user.app_metadata?.role!=="admin"){
+  await db.auth.signOut();
+  document.getElementById("loginMsg").textContent="هذا الحساب ليس لديه صلاحية المدير";
+  return;
+ }
+ document.getElementById("login").classList.add("hidden");
+ document.getElementById("dashboard").classList.remove("hidden");
+ loadCategories();loadProducts();
+}
+
+async function logout(){await db.auth.signOut();location.reload()}
+
+async function uploadFile(file,folder){
+ if(!file)return null;
+ const SUPABASE_ANON_KEY="sb_publishable_yY3tCS7726754hkP8sCdaw_ySbXgKyh";
+ const path=folder+"/"+Date.now()+"-"+safeName;
+ const {error}=await db.storage.from("products-media").upload(path,file);
+ if(error)throw error;
+ return db.storage.from("products-media").getPublicUrl(path).data.publicUrl;
+}
+
+async function loadCategories(){
+ const {data,error}=await db.from("categories").select("*").order("sort_order");
+ if(error){status.textContent=error.message;return}
+ category.innerHTML='<option value="">بدون قسم</option>';
+ data.forEach(c=>category.add(new Option(c.name,c.id)));
+}
+
+async function addCategory(){
+ const value=categoryName.value.trim();
+ if(!value)return alert("اكتب اسم القسم");
+ const {error}=await db.from("categories").insert({name:value});
+ if(error)return alert(error.message);
+ categoryName.value="";await loadCategories();alert("تم إضافة القسم");
+}
+
+async function addProduct(){
+ try{
+  const n=name.value.trim();
+  const p=Number(price.value);
+  if(!n||price.value===""||p<0)return alert("أدخل اسم المنتج والسعر");
+  status.textContent="جاري حفظ المنتج...";
+  const image=await uploadFile(photo.files[0],"images");
+  const video=await uploadFile(videoInput.files[0],"videos");
+  const {error}=await db.from("products").insert({
+   name:n,description:description.value,price:p,
+   category_id:category.value||null,image_url:image,video_url:video,
+   is_new:isNew.checked,is_offer:isOffer.checked,active:true
+  });
+  if(error)throw error;
+  name.value="";description.value="";price.value="";
+  photo.value="";videoInput.value="";isNew.checked=false;isOffer.checked=false;
+  status.textContent="تم حفظ المنتج بنجاح";
+  loadProducts();
+ }catch(e){status.textContent="خطأ: "+e.message}
+}
+
+async function loadProducts(){
+ const {data,error}=await db.from("products").select("*").order("created_at",{ascending:false});
+ if(error){status.textContent=error.message;return}
+ products.innerHTML="";
+ data.forEach(p=>{
+  const el=document.createElement("div");el.className="product";
+  const title=document.createElement("h3");title.textContent=p.name;
+  const priceText=document.createElement("p");priceText.textContent=p.price+" شيكل";
+  el.append(title,priceText);
+  if(p.image_url){const img=document.createElement("img");img.src=p.image_url;el.append(img)}
+  if(p.video_url){const v=document.createElement("video");v.src=p.video_url;v.controls=true;v.style.width="100%";el.append(v)}
+  const del=document.createElement("button");del.className="danger";del.textContent="حذف المنتج";
+  del.onclick=()=>deleteProduct(p.id);
+  el.append(del);products.append(el);
+ });
+}
+
+async function deleteProduct(id){
+ if(!confirm("هل تريد حذف المنتج؟"))return;
+ const {error}=await db.from("products").delete().eq("id",id);
+ if(error)return alert(error.message);
+ loadProducts();
+}
+
+const videoInput=document.getElementById("video");
+checkAdmin();
+</script>
+</body>
+</html>
