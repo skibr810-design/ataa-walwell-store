@@ -226,12 +226,17 @@ async function loadCategories(){
   const title=document.createElement("span");
   title.textContent=c.name;
 
+  const edit=document.createElement("button");
+  edit.className="secondary";
+  edit.textContent="تعديل الاسم";
+  edit.onclick=()=>editCategory(c.id,c.name);
+
   const del=document.createElement("button");
   del.className="danger";
   del.textContent="حذف القسم";
   del.onclick=()=>deleteCategory(c.id);
 
-  item.append(title,del);
+  item.append(title,edit,del);
   $("categoriesList").append(item);
  });
 }
@@ -250,6 +255,17 @@ async function addCategory(){
  $("categoryName").value="";
  await loadCategories();
  message("تم إضافة القسم بنجاح");
+}
+
+async function editCategory(id,currentName){
+ const value=prompt("اكتب الاسم الجديد للقسم:",currentName);
+ if(value===null)return;
+ const name=value.trim();
+ if(!name)return alert("اسم القسم لا يمكن أن يكون فارغاً");
+ const {error}=await db.from("categories").update({name}).eq("id",id);
+ if(error)return alert("تعذر تعديل القسم: "+error.message);
+ await loadCategories();
+ message("تم تعديل اسم القسم بنجاح");
 }
 
 async function deleteCategory(id){
