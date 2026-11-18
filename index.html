@@ -202,7 +202,8 @@ function renderProducts() {
       card.append(image);
     }
 
-    const orderPhone = window.storeWhatsapp || phone;\n    const message = encodeURIComponent(
+    const orderPhone = window.storeWhatsapp || phone;
+    const message = encodeURIComponent(
       `مرحباً، أريد طلب: ${product.name}\nالسعر: ${product.price} شيكل`
     );
 
@@ -293,7 +294,8 @@ async function loadStore() {
   }
 }
 
-loadPublicContent();\nloadStore();
+loadPublicContent();
+loadStore();
 </script>
 
 </body>
