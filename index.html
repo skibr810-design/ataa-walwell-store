@@ -37,6 +37,7 @@ h2{border-right:4px solid #ff633d;padding-right:12px}
 .error{color:#ff947d}
 footer{text-align:center;background:#191a1e;padding:25px;color:#aaa;margin-top:40px}
 footer .logo{margin-bottom:12px}
+.posts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.post{background:#1c1d21;border:1px solid #333;border-radius:12px;padding:16px}.post img{width:100%;max-height:220px;object-fit:cover;border-radius:8px}
 </style>
 </head>
 
@@ -52,6 +53,8 @@ footer .logo{margin-bottom:12px}
   <p>اكتشف أجمل الإكسسوارات والكماليات لسيارتك<br>جودة وأناقة في مكان واحد</p>
   <a class="btn" href="#products">اكتشف منتجاتنا</a>
 </div>
+
+<section id="announcements" class="hidden"><h2>الإعلانات والمنشورات</h2><div id="postsList" class="posts"></div></section>
 
 <section>
   <h2>أقسام المتجر</h2>
@@ -199,12 +202,12 @@ function renderProducts() {
       card.append(image);
     }
 
-    const message = encodeURIComponent(
+    const orderPhone = window.storeWhatsapp || phone;\n    const message = encodeURIComponent(
       `مرحباً، أريد طلب: ${product.name}\nالسعر: ${product.price} شيكل`
     );
 
     const order = createElement("a", "order", "اطلب عبر واتساب");
-    order.href = `https://wa.me/${phone}?text=${message}`;
+    order.href = `https://wa.me/${orderPhone}?text=${message}`;
     order.target = "_blank";
     order.rel = "noopener noreferrer";
 
@@ -212,6 +215,34 @@ function renderProducts() {
     card.append(info);
     productsElement.append(card);
   });
+}
+
+async function loadPublicContent(){
+  try{
+    const {data,error}=await db.from("store_settings").select("settings").eq("id",1).maybeSingle();
+    if(!error && data?.settings){
+      const s=data.settings;
+      if(s.store_name){document.title=s.store_name+" | كماليات السيارات";document.querySelectorAll(".logo").forEach(el=>el.textContent=s.store_name)}
+      if(s.headline){const h=document.querySelector(".hero h1");h.textContent=s.headline}
+      if(s.subtitle){const p=document.querySelector(".hero p");p.textContent=s.subtitle}
+      if(s.accent){document.documentElement.style.setProperty("--accent",s.accent);document.querySelectorAll(".logo,.hero h1 span,.price,h2").forEach(el=>el.style.color=s.accent);document.querySelectorAll(".btn,.category.active").forEach(el=>el.style.background=s.accent)}
+      if(s.whatsapp)window.storeWhatsapp=String(s.whatsapp).replace(/\D/g,"");
+      if(s.cover_url){document.querySelector(".hero").style.backgroundImage="linear-gradient(120deg,rgba(20,20,22,.82),rgba(16,17,20,.9)),url("+JSON.stringify(s.cover_url)+")";document.querySelector(".hero").style.backgroundSize="cover";document.querySelector(".hero").style.backgroundPosition="center"}
+    }
+  }catch(e){console.warn("Store settings unavailable",e)}
+  try{
+    const {data,error}=await db.from("store_posts").select("*").eq("active",true).order("created_at",{ascending:false});
+    if(error) return;
+    const list=document.getElementById("postsList");
+    (data||[]).forEach(p=>{
+      const card=createElement("article","post");
+      if(p.image_url){const img=createElement("img");img.src=p.image_url;img.alt=p.title||"إعلان";card.append(img)}
+      card.append(createElement("h3","",p.title||""));
+      if(p.body)card.append(createElement("p","",p.body));
+      list.append(card);
+    });
+    if(list.children.length)document.getElementById("announcements").classList.remove("hidden");
+  }catch(e){console.warn("Posts unavailable",e)}
 }
 
 async function loadStore() {
@@ -262,7 +293,7 @@ async function loadStore() {
   }
 }
 
-loadStore();
+loadPublicContent();\nloadStore();
 </script>
 
 </body>
