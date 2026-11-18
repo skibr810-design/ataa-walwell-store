@@ -5,6 +5,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>عطاء ولويل | كماليات السيارات</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#101114;color:#fff;font-family:Tahoma,Arial,sans-serif}
@@ -24,78 +27,243 @@ h2{border-right:4px solid #ff633d;padding-right:12px}
 .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:20px}
 .product{background:#1c1d21;border:1px solid #333;border-radius:12px;overflow:hidden}
 .product img{width:100%;height:190px;object-fit:cover;background:#292929}
+.product video{width:100%;max-height:220px;background:#000}
 .product-info{padding:16px}
 .product h3{margin:0 0 10px}
+.product-info p{color:#bbb;line-height:1.8}
 .price{color:#ff633d;font-size:20px;font-weight:bold}
 .order{display:block;text-align:center;background:#188b4d;color:white;text-decoration:none;padding:12px;border-radius:7px;margin-top:15px}
+.empty,.loading,.error{color:#bbb;text-align:center;padding:25px;line-height:2}
+.error{color:#ff947d}
 footer{text-align:center;background:#191a1e;padding:25px;color:#aaa;margin-top:40px}
+footer .logo{margin-bottom:12px}
 </style>
 </head>
+
 <body>
+
 <header>
-<div class="logo">عطاء ولويل</div>
-<a href="#products">منتجاتنا</a>
+  <div class="logo">عطاء ولويل</div>
+  <a href="#products">منتجاتنا</a>
 </header>
 
 <div class="hero">
-<h1>عالمك في <span>كماليات السيارات</span></h1>
-<p>اكتشف أجمل الإكسسوارات والكماليات لسيارتك<br>جودة وأناقة في مكان واحد</p>
-<a class="btn" href="#products">اكتشف منتجاتنا</a>
+  <h1>عالمك في <span>كماليات السيارات</span></h1>
+  <p>اكتشف أجمل الإكسسوارات والكماليات لسيارتك<br>جودة وأناقة في مكان واحد</p>
+  <a class="btn" href="#products">اكتشف منتجاتنا</a>
 </div>
 
 <section>
-<h2>أقسام المتجر</h2>
-<div class="categories" id="categories"></div>
+  <h2>أقسام المتجر</h2>
+  <div class="categories" id="categories">
+    <p class="loading">جاري تحميل الأقسام...</p>
+  </div>
 </section>
 
 <section id="products">
-<h2>منتجاتنا</h2>
-<div class="products" id="productsList"></div>
+  <h2>منتجاتنا</h2>
+  <div class="products" id="productsList">
+    <p class="loading">جاري تحميل المنتجات...</p>
+  </div>
 </section>
 
 <footer>
-<div class="logo">عطاء ولويل</div>
-<p>عالمك في كماليات السيارات</p>
-<p>للطلب والاستفسار: 0568077000</p>
+  <div class="logo">عطاء ولويل</div>
+  <p>عالمك في كماليات السيارات</p>
+  <p>للطلب والاستفسار: 0568077000</p>
 </footer>
 
 <script>
-const phone="0568077000";
+const SUPABASE_URL = "https://bjjlmeceuyehtdsvmjvt.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_yY3tCS7726754hkP8sCdaw_ySbXgKyh";
 
-const categories=["الكل","الإضاءة","الشاشات","التلبيسات","الإكسسوارات","العناية بالسيارات","وصل حديثاً","العروض"];
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
-const products=[
-{name:"منتج تجريبي 1",price:0,category:"الإكسسوارات",image:"",description:"أضف وصف المنتج هنا"},
-{name:"منتج تجريبي 2",price:0,category:"الإضاءة",image:"",description:"أضف وصف المنتج هنا"},
-{name:"منتج تجريبي 3",price:0,category:"الشاشات",image:"",description:"أضف وصف المنتج هنا"}
-];
+const phone = "970568077000";
 
-let selected="الكل";
+const categoriesElement = document.getElementById("categories");
+const productsElement = document.getElementById("productsList");
 
-function renderCategories(){
-document.getElementById("categories").innerHTML=categories.map(c=>
-`<button class="category ${selected===c?'active':''}" onclick="filter('${c}')">${c}</button>`
-).join("");
+let categories = [];
+let products = [];
+let selected = "الكل";
+
+function createElement(tag, className, text) {
+  const element = document.createElement(tag);
+
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+
+  return element;
 }
 
-function renderProducts(){
-let list=selected==="الكل"?products:products.filter(p=>p.category===selected);
-document.getElementById("productsList").innerHTML=list.map(p=>{
-let message=encodeURIComponent("مرحباً، أريد طلب: "+p.name+"\nالسعر: "+p.price+" شيكل");
-return `<div class="product">
-<img src="${p.image||'https://placehold.co/500x400/24252a/ffffff?text=Ataa+Walwell'}" alt="${p.name}">
-<div class="product-info">
-<h3>${p.name}</h3>
-<p>${p.description}</p>
-<div class="price">${p.price} شيكل</div>
-<a class="order" target="_blank" href="https://wa.me/970568077000?text=${message}">اطلب عبر واتساب</a>
-</div></div>`;
-}).join("");
+function renderCategories() {
+  categoriesElement.replaceChildren();
+
+  const filters = [
+    {id:"الكل", name:"الكل"},
+    ...categories.map(c => ({id:c.id, name:c.name})),
+    {id:"__new__", name:"وصل حديثاً"},
+    {id:"__offers__", name:"العروض"}
+  ];
+
+  filters.forEach(category => {
+    const button = createElement("button", "category", category.name);
+
+    if (String(selected) === String(category.id)) {
+      button.classList.add("active");
+    }
+
+    button.addEventListener("click", () => {
+      selected = category.id;
+      renderCategories();
+      renderProducts();
+    });
+
+    categoriesElement.appendChild(button);
+  });
 }
 
-function filter(c){selected=c;renderCategories();renderProducts();}
-renderCategories();
-renderProducts();
+function renderProducts() {
+  productsElement.replaceChildren();
+
+  let filtered = products;
+
+  if (selected === "__new__") {
+    filtered = products.filter(p => p.is_new === true);
+  } else if (selected === "__offers__") {
+    filtered = products.filter(p => p.is_offer === true);
+  } else if (selected !== "الكل") {
+    filtered = products.filter(
+      p => String(p.category_id) === String(selected)
+    );
+  }
+
+  if (!filtered.length) {
+    productsElement.appendChild(
+      createElement("p", "empty", "لا توجد منتجات في هذا القسم حالياً.")
+    );
+    return;
+  }
+
+  filtered.forEach(product => {
+    const card = createElement("div", "product");
+    const image = createElement("img");
+
+    image.src = product.image_url ||
+      "https://placehold.co/500x400/24252a/ffffff?text=Ataa+Walwell";
+
+    image.alt = product.name || "منتج";
+    image.loading = "lazy";
+
+    image.onerror = () => {
+      image.src = "https://placehold.co/500x400/24252a/ffffff?text=Ataa+Walwell";
+    };
+
+    const info = createElement("div", "product-info");
+    const name = createElement("h3", "", product.name || "منتج");
+    const description = createElement(
+      "p",
+      "",
+      product.description || ""
+    );
+
+    const price = createElement(
+      "div",
+      "price",
+      `${product.price ?? 0} شيكل`
+    );
+
+    info.append(name);
+
+    if (product.is_new) {
+      info.append(createElement("p", "", "وصل حديثاً"));
+    }
+
+    if (product.is_offer) {
+      info.append(createElement("p", "", "عرض خاص"));
+    }
+
+    info.append(description, price);
+
+    if (product.video_url) {
+      const video = createElement("video");
+      video.src = product.video_url;
+      video.controls = true;
+      video.preload = "metadata";
+      card.append(image, video);
+    } else {
+      card.append(image);
+    }
+
+    const message = encodeURIComponent(
+      `مرحباً، أريد طلب: ${product.name}\nالسعر: ${product.price} شيكل`
+    );
+
+    const order = createElement("a", "order", "اطلب عبر واتساب");
+    order.href = `https://wa.me/${phone}?text=${message}`;
+    order.target = "_blank";
+    order.rel = "noopener noreferrer";
+
+    info.append(order);
+    card.append(info);
+    productsElement.append(card);
+  });
+}
+
+async function loadStore() {
+  categoriesElement.replaceChildren(
+    createElement("p", "loading", "جاري تحميل الأقسام...")
+  );
+
+  productsElement.replaceChildren(
+    createElement("p", "loading", "جاري تحميل المنتجات...")
+  );
+
+  try {
+    const [categoriesResult, productsResult] = await Promise.all([
+      db.from("categories")
+        .select("*")
+        .eq("active", true)
+        .order("sort_order"),
+
+      db.from("products")
+        .select("*")
+        .eq("active", true)
+        .order("created_at", {ascending:false})
+    ]);
+
+    if (categoriesResult.error) throw categoriesResult.error;
+    if (productsResult.error) throw productsResult.error;
+
+    categories = categoriesResult.data || [];
+    products = productsResult.data || [];
+
+    renderCategories();
+    renderProducts();
+
+  } catch (error) {
+    console.error("Store loading error:", error);
+
+    categoriesElement.replaceChildren(
+      createElement("p", "error", "تعذر تحميل الأقسام.")
+    );
+
+    productsElement.replaceChildren(
+      createElement(
+        "p",
+        "error",
+        "تعذر تحميل المنتجات. تأكد من صلاحيات القراءة في Supabase (RLS)."
+      )
+    );
+  }
+}
+
+loadStore();
 </script>
+
 </body>
 </html>
