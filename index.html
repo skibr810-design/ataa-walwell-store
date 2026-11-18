@@ -1,0 +1,101 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عطاء ولويل | كماليات السيارات</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101114;color:#fff;font-family:Tahoma,Arial,sans-serif}
+header{background:#191a1e;padding:22px 7%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333}
+.logo{font-size:27px;font-weight:bold;color:#ff633d}
+header a{color:white;text-decoration:none}
+.hero{padding:75px 8%;text-align:center;background:linear-gradient(120deg,#252629,#101114)}
+.hero h1{font-size:38px;margin:0 0 15px}
+.hero h1 span{color:#ff633d}
+.hero p{color:#bbb;line-height:2}
+.btn{display:inline-block;background:#ff633d;color:white;padding:13px 25px;border-radius:8px;text-decoration:none;margin-top:15px}
+section{padding:35px 7%}
+h2{border-right:4px solid #ff633d;padding-right:12px}
+.categories{display:flex;flex-wrap:wrap;gap:10px}
+.category{background:#24252a;border:1px solid #444;color:white;padding:12px 18px;border-radius:8px;cursor:pointer}
+.category.active{background:#ff633d;border-color:#ff633d}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:20px}
+.product{background:#1c1d21;border:1px solid #333;border-radius:12px;overflow:hidden}
+.product img{width:100%;height:190px;object-fit:cover;background:#292929}
+.product-info{padding:16px}
+.product h3{margin:0 0 10px}
+.price{color:#ff633d;font-size:20px;font-weight:bold}
+.order{display:block;text-align:center;background:#188b4d;color:white;text-decoration:none;padding:12px;border-radius:7px;margin-top:15px}
+footer{text-align:center;background:#191a1e;padding:25px;color:#aaa;margin-top:40px}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">عطاء ولويل</div>
+<a href="#products">منتجاتنا</a>
+</header>
+
+<div class="hero">
+<h1>عالمك في <span>كماليات السيارات</span></h1>
+<p>اكتشف أجمل الإكسسوارات والكماليات لسيارتك<br>جودة وأناقة في مكان واحد</p>
+<a class="btn" href="#products">اكتشف منتجاتنا</a>
+</div>
+
+<section>
+<h2>أقسام المتجر</h2>
+<div class="categories" id="categories"></div>
+</section>
+
+<section id="products">
+<h2>منتجاتنا</h2>
+<div class="products" id="productsList"></div>
+</section>
+
+<footer>
+<div class="logo">عطاء ولويل</div>
+<p>عالمك في كماليات السيارات</p>
+<p>للطلب والاستفسار: 0568077000</p>
+</footer>
+
+<script>
+const phone="0568077000";
+
+const categories=["الكل","الإضاءة","الشاشات","التلبيسات","الإكسسوارات","العناية بالسيارات","وصل حديثاً","العروض"];
+
+const products=[
+{name:"منتج تجريبي 1",price:0,category:"الإكسسوارات",image:"",description:"أضف وصف المنتج هنا"},
+{name:"منتج تجريبي 2",price:0,category:"الإضاءة",image:"",description:"أضف وصف المنتج هنا"},
+{name:"منتج تجريبي 3",price:0,category:"الشاشات",image:"",description:"أضف وصف المنتج هنا"}
+];
+
+let selected="الكل";
+
+function renderCategories(){
+document.getElementById("categories").innerHTML=categories.map(c=>
+`<button class="category ${selected===c?'active':''}" onclick="filter('${c}')">${c}</button>`
+).join("");
+}
+
+function renderProducts(){
+let list=selected==="الكل"?products:products.filter(p=>p.category===selected);
+document.getElementById("productsList").innerHTML=list.map(p=>{
+let message=encodeURIComponent("مرحباً، أريد طلب: "+p.name+"\nالسعر: "+p.price+" شيكل");
+return `<div class="product">
+<img src="${p.image||'https://placehold.co/500x400/24252a/ffffff?text=Ataa+Walwell'}" alt="${p.name}">
+<div class="product-info">
+<h3>${p.name}</h3>
+<p>${p.description}</p>
+<div class="price">${p.price} شيكل</div>
+<a class="order" target="_blank" href="https://wa.me/970568077000?text=${message}">اطلب عبر واتساب</a>
+</div></div>`;
+}).join("");
+}
+
+function filter(c){selected=c;renderCategories();renderProducts();}
+renderCategories();
+renderProducts();
+</script>
+</body>
+</html>
